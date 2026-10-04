@@ -320,3 +320,63 @@ def test_source_shell_branches(activity, current):
     )
     assert ("ENTER_TV" in result.stderr) == activity.startswith("other")
     assert ("SWITCH_SOURCE" in result.stderr) == (current != 18)
+
+
+async def test_close_rejects_queued_writes(transport):
+    """Disabling must not drain pending writes into the TV before disconnecting."""
+    client = HaierClient("192.0.2.1", 5555, Mock())
+    await client.async_read()
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def blocked_read(command, **kwargs):
+        started.set()
+        await release.wait()
+        return snapshot()
+
+    transport.shell.side_effect = blocked_read
+    active = asyncio.create_task(client.async_read())
+    await started.wait()
+    queued = asyncio.create_task(client.async_write("maxxbass", 0))
+    await asyncio.sleep(0)
+    closing = asyncio.create_task(client.async_close())
+    await asyncio.sleep(0)
+    release.set()
+    await active
+    with pytest.raises(CannotConnect, match="closed"):
+        await queued
+    await closing
+    assert not transport.available
+    assert not any(
+        "service call tv 466" in call.args[0] for call in transport.shell.call_args_list
+    )
+
+
+async def test_ha_disable_closes_real_client(hass, entry, transport):
+    """Use the real client and HA disable flow; mock only the network transport."""
+    from datetime import timedelta
+
+    from homeassistant.config_entries import ConfigEntryDisabler
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    client = HaierClient("192.0.2.1", 5555, Mock(), entry.unique_id)
+    with patch("custom_components.haier_tv.async_create_client", return_value=client):
+        entry.add_to_hass(hass)
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        assert transport.available
+        assert await hass.config_entries.async_set_disabled_by(
+            entry.entry_id, ConfigEntryDisabler.USER
+        )
+        await hass.async_block_till_done()
+        transport.close.assert_awaited_once()
+        assert not transport.available
+        shells = transport.shell.await_count
+        connects = transport.connect.await_count
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=2))
+        await hass.async_block_till_done()
+        assert transport.shell.await_count == shells
+        assert transport.connect.await_count == connects
+        with pytest.raises(CannotConnect, match="closed"):
+            await client.async_read()

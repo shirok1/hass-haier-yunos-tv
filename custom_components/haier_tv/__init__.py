@@ -38,6 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HaierConfigEntry) -> boo
         raise
 
     async def async_stop(_event: Event) -> None:
+        await coordinator.async_shutdown()
         await client.async_close()
 
     entry.async_on_unload(
@@ -49,5 +50,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HaierConfigEntry) -> boo
 async def async_unload_entry(hass: HomeAssistant, entry: HaierConfigEntry) -> bool:
     """Remove polling/entities and release the single-client TV connection."""
     if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        await entry.runtime_data.async_shutdown()
         await entry.runtime_data.client.async_close()
     return unloaded

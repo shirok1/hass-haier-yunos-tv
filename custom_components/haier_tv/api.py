@@ -328,7 +328,7 @@ class HaierClient:
                 raise
 
     async def async_close(self) -> None:
-        """Wait for an active transaction and release the TV connection."""
+        """Reject queued work, finish the active transaction, then release ADB."""
+        self._closed = True
         async with self._lock:
-            self._closed = True
             await self._device.close()

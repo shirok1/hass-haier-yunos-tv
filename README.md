@@ -1,4 +1,4 @@
-# Haier TV — native ADB
+# Haier YunOS TV
 
 Home Assistant custom integration for **Haier LE40AL88G31R1, YunOS / Android API 19**. Controls the TV's native `android.app.ITvManager` service rather than simulating remote buttons or changing Android's unrelated music-stream volume.
 
@@ -25,7 +25,7 @@ The integration does not expose unverified power/wake, sleep timer, or screen-bl
 
 1. Copy `custom_components/haier_tv` into your HA configuration directory's `custom_components/` directory.
 2. Remove the previous `haier-tv.yaml` package / Nix-generated package and its poll automation, if installed. **Disable the existing Android Debug Bridge integration for this TV.** This old TV's adbd accepts only one direct client; this integration owns the connection instead of reusing the old entity.
-3. Restart HA. Open **Settings → Devices & services → Add integration → Haier TV (native ADB)**.
+3. Restart HA. Open **Settings → Devices & services → Add integration → Haier YunOS TV**.
 4. Enter the TV's LAN host and ADB port (normally 5555). Approve the TV's debugging authorization prompt and retry if prompted.
 5. Add the created entities to the dashboard. Entity IDs are assigned by HA; no external entity references or scripts are required.
 
@@ -44,9 +44,13 @@ Use the integration's **Reconfigure** menu to change the host/port. The hardware
 - When the native connection fails, controls become unavailable and the connection binary sensor becomes off. Polling reconnects and verifies model, SDK, Binder service and saved MAC before using transaction IDs.
 - Core numeric readings are required; invalid or truncated data never becomes zero. Resolution failure affects only that sensor. A no-signal indication makes resolution unavailable.
 - Input switching opens `RootActivity` only if outside the recognized TV source activities, and skips the switch transaction when already at the requested source. No Home key is sent.
-- Unloading the entry or stopping HA closes the transport. Loading the integration only reads state; it does not apply preferences.
+- Disabling/unloading the entry or stopping HA shuts down polling, rejects queued commands, waits for the current bounded transaction, and closes the transport. Loading the integration only reads state; it does not apply preferences.
 
 This is bounded polling, not a hardware event subscription. “Signal present” means the firmware's no-signal flag is clear, not an independent HDMI lock measurement. Network loss cannot be used to distinguish standby, power loss and a disconnected cable.
+
+## Branding
+
+The integration is named **Haier YunOS TV** (Chinese: **海尔 YunOS TV**). Haier icon/logo assets ship locally in `custom_components/haier_tv/brand/`, using the HA 2026.3+ branding API; no external CDN is needed to render these images. Asset provenance is recorded in NOTICE.
 
 ## Architecture
 

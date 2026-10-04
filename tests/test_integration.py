@@ -110,3 +110,28 @@ async def test_setup_failure_releases_connection(hass, entry, client):
     client.async_read.side_effect = CannotConnect("offline")
     assert not await hass.config_entries.async_setup(entry.entry_id)
     client.async_close.assert_awaited_once()
+
+
+async def test_disabling_entry_stops_polling_and_closes_adb(hass, entry, client):
+    """Exercise the real HA disable operation, not just the unload callback."""
+    from datetime import timedelta
+
+    from homeassistant.config_entries import ConfigEntryDisabler, ConfigEntryState
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    ids = await setup(hass, entry)
+    coordinator = entry.runtime_data
+    assert await hass.config_entries.async_set_disabled_by(
+        entry.entry_id, ConfigEntryDisabler.USER
+    )
+    await hass.async_block_till_done()
+    client.async_close.assert_awaited_once()
+    assert entry.state is ConfigEntryState.NOT_LOADED
+    assert coordinator._shutdown_requested
+    assert coordinator._unsub_refresh is None
+    assert hass.states.get(ids["tv"]).state == "unavailable"
+    reads = client.async_read.await_count
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=2))
+    await hass.async_block_till_done()
+    assert client.async_read.await_count == reads
