@@ -1,5 +1,5 @@
 [project]
-name = "ha-haier-tv"
+name = "hass-haier-yunos-tv"
 version = "0.1.0"
 description = "Native ADB control for Haier LE40AL88G31R1 in Home Assistant"
 requires-python = ">=3.14.2"
