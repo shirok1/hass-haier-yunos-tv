@@ -1,4 +1,4 @@
-Haier TV (native ADB)
+Haier YunOS TV
 
 This integration is original firmware-specific code, informed by the structure
 and public APIs of Home Assistant Core's Android Debug Bridge integration:
@@ -10,3 +10,8 @@ The runtime dependency adb-shell is Copyright Jeff Irion and contributors,
 incorporating Google ADB code, licensed under Apache-2.0. It is also used by
 Home Assistant Core's Android Debug Bridge integration.
 https://github.com/JeffLIrion/adb_shell
+
+Brand assets in custom_components/haier_tv/brand/ are copied unmodified from
+https://github.com/home-assistant/brands/tree/183bbc7274268ee783ecfc8e7e2d6f7bc4f5be30/custom_integrations/haier
+Haier names and logos are trademarks of their respective owners. The code
+license does not grant trademark rights.

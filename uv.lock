@@ -1176,35 +1176,6 @@ wheels = [
 ]
 
 [[package]]
-name = "hass-haier-yunos-tv"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "adb-shell", extra = ["async"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "homeassistant" },
-    { name = "mypy" },
-    { name = "pytest-cov" },
-    { name = "pytest-homeassistant-custom-component" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "adb-shell", extras = ["async"], specifier = "==0.4.4" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "homeassistant", specifier = "==2026.9.4" },
-    { name = "mypy", specifier = ">=1.18" },
-    { name = "pytest-cov", specifier = ">=6" },
-    { name = "pytest-homeassistant-custom-component", specifier = "==0.13.367" },
-    { name = "ruff", specifier = ">=0.13" },
-]
-
-[[package]]
 name = "habluetooth"
 version = "7.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1252,6 +1223,35 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/48/91/c51fd22ce36eb98115fae87d36af1f4ca5d2c9db9b04a3efff923e2136f7/habluetooth-7.1.2-cp315-cp315t-musllinux_1_2_x86_64.whl", hash = "sha256:d6140f286dded5229a3c31bf070980ea9a0a6ad31f8f6025515949d96f35ff8c", size = 2368905, upload-time = "2026-09-22T14:26:21.401Z" },
     { url = "https://files.pythonhosted.org/packages/61/3c/49e21ba9f6f1e132d53ecfad355b695066648bfad8c12ab3720cafc38ebd/habluetooth-7.1.2-cp315-cp315t-win32.whl", hash = "sha256:fe7bb1192a5824b04939e4ad9b445622539266bde13ca09f4941e057cc094fc7", size = 1579270, upload-time = "2026-09-22T14:26:23.429Z" },
     { url = "https://files.pythonhosted.org/packages/a9/06/3a703d46ef8c5ae282e81fa69a3fdbcb26cc8916f66a493c5a4fe1df3db7/habluetooth-7.1.2-cp315-cp315t-win_amd64.whl", hash = "sha256:9c7e2c7b9095e47ff15563d65546ea9be59c54971745d988756f0289b158f835", size = 1837513, upload-time = "2026-09-22T14:26:25.605Z" },
+]
+
+[[package]]
+name = "hass-haier-yunos-tv"
+version = "0.1.1"
+source = { virtual = "." }
+dependencies = [
+    { name = "adb-shell", extra = ["async"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "homeassistant" },
+    { name = "mypy" },
+    { name = "pytest-cov" },
+    { name = "pytest-homeassistant-custom-component" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "adb-shell", extras = ["async"], specifier = "==0.4.4" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "homeassistant", specifier = "==2026.9.4" },
+    { name = "mypy", specifier = ">=1.18" },
+    { name = "pytest-cov", specifier = ">=6" },
+    { name = "pytest-homeassistant-custom-component", specifier = "==0.13.367" },
+    { name = "ruff", specifier = ">=0.13" },
 ]
 
 [[package]]
