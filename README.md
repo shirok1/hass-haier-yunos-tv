@@ -2,7 +2,7 @@
 
 Home Assistant custom integration for **Haier LE40AL88G31R1, YunOS / Android API 19**. Controls the TV's native `android.app.ITvManager` service rather than simulating remote buttons or changing Android's unrelated music-stream volume.
 
-This is a local development repository, not a published HACS integration. The first implementation is tested against **Home Assistant 2026.9.4 / Python 3.14.2+**. Other HA versions and Haier firmware variants are not validated.
+This is a custom integration, not part of Home Assistant Core. The first implementation is tested against **Home Assistant 2026.9.4 / Python 3.14.2+**. Other HA versions and Haier firmware variants are not validated.
 
 ## What appears in Home Assistant
 
@@ -35,18 +35,6 @@ A setup flow refuses to connect when it sees an enabled built-in Android Debug B
 
 Use the integration's **Reconfigure** menu to change the host/port. The hardware MAC identifies the device; reconfiguration cannot silently substitute a different television. ADB authorization failures start HA's reauthentication flow.
 
-## NixOS
-
-A local package and module are supplied in `nix/`. With this repository available to your NixOS configuration, import its module:
-
-```nix
-{
-  imports = [ ./ha-haier-tv/nix/module.nix ];
-}
-```
-
-It uses nixpkgs' `buildHomeAssistantComponent`, packages only the component directory, and adds `adb-shell` plus its async extras from HA's Python package set. It does not enable another ADB integration or create YAML entities. After rebuilding/restarting, add the device through HA's UI as above. Use nixpkgs providing HA 2026.9.4 / Python 3.14 or newer; only 2026.9.4 is currently tested. The Nix files were checked against upstream builder definitions but **have not been evaluated/built locally** because this machine has no Nix installation.
-
 ## Behavior and failure handling
 
 - `adb-shell[async]==0.4.4`, the same ADB library version used by HA Core's Android Debug Bridge integration.
@@ -68,7 +56,7 @@ This is bounded polling, not a hardware event subscription. “Signal present”
 - Entity platforms: HA's standard media player, number, switch, sensor, binary sensor and button APIs.
 - `diagnostics.py`: native readings and device metadata with host/MAC redacted; no keys or raw shell output.
 
-Official reference implementation: [Home Assistant Core Android Debug Bridge, 2026.9.4](https://github.com/home-assistant/core/tree/2026.9.4/homeassistant/components/androidtv). The design uses documented HA APIs and the same ADB dependency; it does not import the built-in integration's private objects or copy its unrelated app-discovery logic. See [NOTICE](NOTICE) and [LICENSE](LICENSE) for attribution/licensing. Until this repository has a public documentation URL, the manifest links to the upstream ADB transport documentation; this README is the installation guide for this custom integration.
+Official reference implementation: [Home Assistant Core Android Debug Bridge, 2026.9.4](https://github.com/home-assistant/core/tree/2026.9.4/homeassistant/components/androidtv). The design uses documented HA APIs and the same ADB dependency; it does not import the built-in integration's private objects or copy its unrelated app-discovery logic. See [NOTICE](NOTICE) and [LICENSE](LICENSE) for attribution/licensing.
 
 ## Development and validation
 
