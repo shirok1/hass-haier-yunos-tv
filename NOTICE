@@ -1,0 +1,12 @@
+Haier TV (native ADB)
+
+This integration is original firmware-specific code, informed by the structure
+and public APIs of Home Assistant Core's Android Debug Bridge integration:
+https://github.com/home-assistant/core/tree/2026.9.4/homeassistant/components/androidtv
+Home Assistant Core is Copyright The Home Assistant Authors, Apache-2.0.
+No official integration quality-scale certification is claimed.
+
+The runtime dependency adb-shell is Copyright Jeff Irion and contributors,
+incorporating Google ADB code, licensed under Apache-2.0. It is also used by
+Home Assistant Core's Android Debug Bridge integration.
+https://github.com/JeffLIrion/adb_shell

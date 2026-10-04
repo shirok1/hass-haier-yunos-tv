@@ -1,0 +1,78 @@
+{
+  "title": "Haier TV (native ADB)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Haier TV",
+        "description": "For LE40AL88G31R1 (YunOS / Android API 19) only. Disable the existing Android Debug Bridge integration for this TV first; old adbd allows one client. Authorize the new ADB key on the television when prompted.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "reconfigure": {
+        "title": "Change TV address",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Authorize Home Assistant",
+        "description": "Confirm the debugging authorization dialog on the TV, then submit to reconnect."
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect. Check the address, ADB debugging and other connected clients.",
+      "auth_failed": "Authorize Home Assistant's ADB key on the TV, then retry.",
+      "unsupported_device": "Unsupported model, firmware, missing hardware identity, or a different TV at this address.",
+      "invalid_response": "The TV did not return valid native settings.",
+      "adb_in_use": "Disable the existing Android Debug Bridge integration for this TV before connecting."
+    },
+    "abort": {
+      "already_configured": "This TV is already configured.",
+      "reconfigure_successful": "TV address updated.",
+      "reauth_successful": "ADB authorization restored.",
+      "unique_id_mismatch": "This is a different TV."
+    }
+  },
+  "entity": {
+    "number": {
+      "backlight": {
+        "name": "Backlight"
+      }
+    },
+    "switch": {
+      "maxxbass": {
+        "name": "MaxxBass"
+      },
+      "mute": {
+        "name": "Mute"
+      }
+    },
+    "sensor": {
+      "source": {
+        "name": "Input"
+      },
+      "resolution": {
+        "name": "Resolution"
+      }
+    },
+    "binary_sensor": {
+      "screen": {
+        "name": "Screen"
+      },
+      "signal": {
+        "name": "Signal present"
+      },
+      "connection": {
+        "name": "Connection"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Refresh"
+      }
+    }
+  }
+}

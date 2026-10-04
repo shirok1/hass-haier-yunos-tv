@@ -1,0 +1,38 @@
+{
+  "entity": {
+    "number": {
+      "backlight": {
+        "default": "mdi:brightness-6"
+      }
+    },
+    "switch": {
+      "maxxbass": {
+        "default": "mdi:speaker"
+      },
+      "mute": {
+        "default": "mdi:volume-off"
+      }
+    },
+    "sensor": {
+      "source": {
+        "default": "mdi:video-input-hdmi"
+      },
+      "resolution": {
+        "default": "mdi:monitor-screenshot"
+      }
+    },
+    "binary_sensor": {
+      "screen": {
+        "default": "mdi:television"
+      },
+      "signal": {
+        "default": "mdi:video-input-hdmi"
+      }
+    },
+    "button": {
+      "refresh": {
+        "default": "mdi:refresh"
+      }
+    }
+  }
+}

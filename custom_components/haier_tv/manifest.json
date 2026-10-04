@@ -1,0 +1,16 @@
+{
+  "domain": "haier_tv",
+  "name": "Haier TV (native ADB)",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/androidtv/",
+  "iot_class": "local_polling",
+  "integration_type": "device",
+  "loggers": [
+    "adb_shell"
+  ],
+  "requirements": [
+    "adb-shell[async]==0.4.4"
+  ],
+  "version": "0.1.0"
+}

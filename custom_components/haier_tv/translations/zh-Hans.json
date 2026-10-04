@@ -1,0 +1,78 @@
+{
+  "title": "海尔电视（原生 ADB）",
+  "config": {
+    "step": {
+      "user": {
+        "title": "连接海尔电视",
+        "description": "仅适用于 LE40AL88G31R1（YunOS / Android API 19）。请先停用这台电视原有的 Android Debug Bridge 集成，旧版 adbd 只能接受一个客户端。出现调试授权弹窗时请在电视上允许连接。",
+        "data": {
+          "host": "主机地址",
+          "port": "端口"
+        }
+      },
+      "reconfigure": {
+        "title": "修改电视地址",
+        "data": {
+          "host": "主机地址",
+          "port": "端口"
+        }
+      },
+      "reauth_confirm": {
+        "title": "重新授权 Home Assistant",
+        "description": "在电视上允许调试连接后，提交以重新连接。"
+      }
+    },
+    "error": {
+      "cannot_connect": "连接失败，请检查地址、调试开关和其他 ADB 客户端。",
+      "auth_failed": "请在电视上允许 Home Assistant 的 ADB 密钥，然后重试。",
+      "unsupported_device": "机型、固件或硬件标识不受支持，或此地址已变成另一台电视。",
+      "invalid_response": "未读到有效的原生电视设置。",
+      "adb_in_use": "请先停用这台电视原有的 Android Debug Bridge 集成。"
+    },
+    "abort": {
+      "already_configured": "这台电视已配置。",
+      "reconfigure_successful": "电视地址已更新。",
+      "reauth_successful": "ADB 授权已恢复。",
+      "unique_id_mismatch": "这不是原来的电视。"
+    }
+  },
+  "entity": {
+    "number": {
+      "backlight": {
+        "name": "背光"
+      }
+    },
+    "switch": {
+      "maxxbass": {
+        "name": "MaxxBass 低音增强"
+      },
+      "mute": {
+        "name": "静音"
+      }
+    },
+    "sensor": {
+      "source": {
+        "name": "当前输入"
+      },
+      "resolution": {
+        "name": "分辨率"
+      }
+    },
+    "binary_sensor": {
+      "screen": {
+        "name": "屏幕开启"
+      },
+      "signal": {
+        "name": "信号可用"
+      },
+      "connection": {
+        "name": "连接"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "刷新状态"
+      }
+    }
+  }
+}
