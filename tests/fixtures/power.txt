@@ -1,0 +1,28 @@
+POWER MANAGER (dumpsys power)
+
+Power Manager State:
+  mDirty=0x0
+  mWakefulness=Awake
+  mIsPowered=false
+  mPlugType=0
+  mBatteryLevel=0
+  mBatteryLevelWhenDreamStarted=0
+  mDockState=0
+  mStayOn=false
+  mProximityPositive=false
+  mBootCompleted=true
+  mSystemReady=true
+  mWakeLockSummary=0x0
+  mUserActivitySummary=0x1
+  mRequestWaitForNegativeProximity=false
+  mSandmanScheduled=false
+  mLastWakeTime=0 (133650 ms ago)
+  mLastSleepTime=0 (133650 ms ago)
+  mSendWakeUpFinishedNotificationWhenReady=false
+  mSendGoToSleepFinishedNotificationWhenReady=false
+  mLastUserActivityTime=42200 (91450 ms ago)
+  mLastUserActivityTimeNoChangeLights=0 (133650 ms ago)
+  mDisplayReady=true
+  mHoldingWakeLockSuspendBlocker=false
+  mHoldingDisplaySuspendBlocker=true
+

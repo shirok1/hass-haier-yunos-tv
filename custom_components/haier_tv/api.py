@@ -321,7 +321,12 @@ class HaierClient:
                         # Use the device's uptime-domain wake timestamp. /proc/uptime
                         # includes suspend and can be in PowerManager's future.
                         dump = await self._shell("dumpsys power")
-                        match = re.search(r"^\s*mLastWakeTime=(\d+)\s*$", dump, re.M)
+                        match = re.search(
+                            r"^[ \t]*mLastWakeTime=(\d+)"
+                            r"(?:[ \t]+\([^\r\n)]*\))?[ \t]*\r?$",
+                            dump,
+                            re.M,
+                        )
                         if not match or int(match[1]) >= 2**63:
                             raise InvalidResponse("Missing power wake timestamp")
                         low, high = struct.unpack(
