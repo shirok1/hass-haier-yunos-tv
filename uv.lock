@@ -1227,7 +1227,7 @@ wheels = [
 
 [[package]]
 name = "hass-haier-yunos-tv"
-version = "0.2.2"
+version = "0.2.3"
 source = { virtual = "." }
 dependencies = [
     { name = "adb-shell", extra = ["async"] },

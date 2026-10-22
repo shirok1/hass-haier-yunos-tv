@@ -103,7 +103,7 @@
           "turn_off_mode": "使用方式"
         },
         "data_description": {
-          "turn_off_mode": "切换方式会保留之前保存的自定义动作。"
+          "turn_off_mode": "ADB 调用原厂遥控的关机接口；自定义动作可使用红外或脚本。切换方式会保留已保存的动作。"
         }
       },
       "power_off_action": {
@@ -138,7 +138,7 @@
     "turn_off_mode": {
       "options": {
         "disabled": "禁用关机控制",
-        "adb": "ADB 原生待机",
+        "adb": "ADB 原厂关机",
         "action": "自定义动作"
       }
     }

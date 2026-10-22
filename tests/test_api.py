@@ -383,57 +383,26 @@ async def test_ha_disable_closes_real_client(hass, entry, transport):
 
 
 @pytest.mark.parametrize(
-    "timestamp,low,high", [(123, 123, 0), (4294967295, -1, 0), (4294967296, 0, 1)]
+    "response,error",
+    [
+        ("Result: Parcel(00000000    '....')\r\n", None),
+        ("Result: Parcel(ffffffff)", InvalidResponse),
+        ("Permission Denial", InvalidResponse),
+        (OSError("disconnected during shutdown"), CannotConnect),
+    ],
 )
-@pytest.mark.parametrize("suffix", ["", " (133650 ms ago)"])
-async def test_native_standby_timestamp(timestamp, low, high, suffix):
-    with patch("custom_components.haier_tv.api.AdbDeviceTcpAsync") as constructor:
-        device = constructor.return_value
-        device.available = True
-        device.shell = AsyncMock(
-            side_effect=[
-                f"  mLastWakeTime={timestamp}{suffix}\r\n",
-                "Result: Parcel(00000000)",
-                snapshot(screen=0),
-            ]
-        )
-        client = HaierClient("192.0.2.1", 5555, Mock())
-        await client.async_sleep()
-        assert device.shell.await_args_list[0].args[0] == "dumpsys power"
-        assert (
-            device.shell.await_args_list[1].args[0]
-            == f"service call power 9 i32 {low} i32 {high} i32 0"
-        )
-
-
-async def test_native_standby_rejects_unknown_clock():
-    with patch("custom_components.haier_tv.api.AdbDeviceTcpAsync") as constructor:
-        device = constructor.return_value
-        device.available = True
-        device.shell = AsyncMock(return_value="Unknown dump")
-        device.close = AsyncMock()
-        client = HaierClient("192.0.2.1", 5555, Mock())
-        with pytest.raises(InvalidResponse):
-            await client.async_sleep()
-        assert device.shell.await_count == 1
-
-
-async def test_native_standby_captured_power_dump():
-    from pathlib import Path
-
+async def test_vendor_power_off(response, error):
     with patch("custom_components.haier_tv.api.AdbDeviceTcpAsync") as constructor:
         device = constructor.return_value
         device.available = True
         device.close = AsyncMock()
-        device.shell = AsyncMock(
-            side_effect=[
-                await asyncio.to_thread(Path("tests/fixtures/power.txt").read_text),
-                "Result: Parcel(00000000)",
-                snapshot(screen=0),
-            ]
-        )
+        device.shell = AsyncMock(side_effect=[response])
         client = HaierClient("192.0.2.1", 5555, Mock())
-        await client.async_sleep()
-        assert device.shell.await_args_list[1].args[0] == (
-            "service call power 9 i32 0 i32 0 i32 0"
-        )
+        if error:
+            with pytest.raises(error):
+                await client.async_turn_off()
+            device.close.assert_awaited_once()
+        else:
+            await client.async_turn_off()
+        # No generic Android sleep, timestamp read, or replay after disconnect.
+        device.shell.assert_awaited_once_with("service call tv 5", read_timeout_s=15)

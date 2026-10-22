@@ -43,7 +43,7 @@ Open the integration's **Configure** menu and choose **Turn on**, **Turn off**, 
 |---|---|
 | Turn-on action | Native HA action editor: select your existing IR service or script |
 | Treat unreachable as off | Keep the media player available as `off` when ADB cannot connect; off by default |
-| Turn-off method | Disabled (default), ADB native standby, or custom action |
+| Turn-off method | Disabled (default), ADB vendor power off, or custom action |
 | Custom turn-off action | Independent HA action sequence; may use the same IR toggle as turn-on |
 | Power confirmation timeout | 10–600 seconds; default 120, including action execution and confirmation |
 
@@ -61,7 +61,9 @@ Other controls remain unavailable while ADB is unreachable. The connection diagn
 
 Disabling/reloading the integration cancels pending power confirmation and the integration-owned action sequence before closing ADB. An already transmitted IR command cannot be recalled; independently launched scripts (for example via `script.turn_on`) are not owned by the integration. Prefer calling the script directly if its completion should be awaited.
 
-ADB standby uses the firmware's `IPowerManager.goToSleep(long, int)` Binder transaction, not a key event. This path has protocol/unit tests but **has not been physically verified on the television**. A custom IR action is available for the power mechanism you already use. No power action executes merely by saving options or starting HA.
+ADB power-off uses `ITvManager.stopRpcServer()` (`service call tv 5`), the normal vendor remote power-button path. It mutes audio, turns the panel off, enables the power-off watchdog and stops the vendor RPC server. On 2026-10-23 this exact command was tested on the TV; the owner confirmed normal power-off and remote power-on. The HA service itself still needs deployment acceptance. No power action executes merely by saving options or starting HA.
+
+Versions 0.2.0–0.2.2 used Android `goToSleep`, which produced a black screen without the expected TV power transition. Version 0.2.3 removes that path and its timestamp parsing. Existing `adb` mode selections use the corrected vendor implementation automatically.
 
 ## Behavior and failure handling
 

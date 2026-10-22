@@ -103,7 +103,7 @@
           "turn_off_mode": "Method"
         },
         "data_description": {
-          "turn_off_mode": "Switching methods preserves your saved custom action."
+          "turn_off_mode": "ADB uses the vendor remote power-off path. Custom actions can use IR or scripts. Switching methods preserves your saved action."
         }
       },
       "power_off_action": {
@@ -138,7 +138,7 @@
     "turn_off_mode": {
       "options": {
         "disabled": "Disable power-off control",
-        "adb": "ADB native standby",
+        "adb": "ADB vendor power off",
         "action": "Custom action"
       }
     }

@@ -143,7 +143,7 @@ async def test_off_confirmation(hass, entry, client, mode):
         client.async_read.side_effect = CannotConnect()
         raise CannotConnect("standby closed the transport")
 
-    client.async_sleep.side_effect = sleep
+    client.async_turn_off.side_effect = sleep
 
     @callback
     def ir(event):
@@ -154,7 +154,7 @@ async def test_off_confirmation(hass, entry, client, mode):
         "media_player", "turn_off", {"entity_id": ids["tv"]}, blocking=True
     )
     assert hass.states.get(ids["tv"]).state == "off"
-    assert client.async_sleep.await_count == (mode == "adb")
+    assert client.async_turn_off.await_count == (mode == "adb")
     remove()
 
 

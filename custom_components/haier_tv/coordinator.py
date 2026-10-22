@@ -124,9 +124,9 @@ class HaierCoordinator(DataUpdateCoordinator[Snapshot | None]):
                     return
                 if not on and self.off_mode == "adb":
                     try:
-                        await self.client.async_sleep()
+                        await self.client.async_turn_off()
                     except CannotConnect:
-                        # Standby can close ADB before its reply. Confirm below.
+                        # Power-off can close ADB before its reply. Confirm below.
                         pass
                 else:
                     await self.scripts[key].async_run({}, context=context)
