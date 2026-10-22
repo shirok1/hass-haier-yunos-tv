@@ -79,13 +79,53 @@
     "step": {
       "init": {
         "title": "电源控制",
-        "description": "使用 HA 动作编辑器调用现有红外服务或脚本。动作只执行一次；开机需等到 ADB 原生状态可读且屏幕开启才算成功。连接失败视为关机会同时涵盖断网、断电和待机；授权或协议错误仍显示不可用。",
+        "description": "选择要调整的项目。每项独立保存，不会覆盖其他设置。",
+        "menu_options": {
+          "power_on": "开机 · 红外或脚本",
+          "power_off": "关机 · ADB 或自定义动作",
+          "power_state": "状态判断与等待时间"
+        }
+      },
+      "power_on": {
+        "title": "开机动作",
+        "description": "选择你已有的红外服务或脚本。动作只执行一次，电视重新连接且屏幕开启后才算开机成功。清空动作可关闭播放器的开机功能。",
         "data": {
-          "turn_on_action": "开机动作",
-          "offline_as_off": "连接失败视为关机",
-          "turn_off_mode": "关机方式",
-          "turn_off_action": "自定义关机动作",
-          "power_timeout": "电源状态确认超时（秒）"
+          "turn_on_action": "执行动作"
+        },
+        "data_description": {
+          "turn_on_action": "点击「添加动作」选择服务或脚本。开机与关机可以使用同一条红外电源指令。"
+        }
+      },
+      "power_off": {
+        "title": "关机方式",
+        "description": "选择播放器关闭电视的方式。选择「自定义动作」后，下一页配置要执行的动作。",
+        "data": {
+          "turn_off_mode": "使用方式"
+        },
+        "data_description": {
+          "turn_off_mode": "切换方式会保留之前保存的自定义动作。"
+        }
+      },
+      "power_off_action": {
+        "title": "自定义关机动作",
+        "description": "选择红外服务或脚本。动作只执行一次，等到屏幕关闭或电视断开连接后才算完成。",
+        "data": {
+          "turn_off_action": "执行动作"
+        },
+        "data_description": {
+          "turn_off_action": "至少添加一个动作。可以使用与开机相同的红外电源指令。"
+        }
+      },
+      "power_state": {
+        "title": "状态判断与等待时间",
+        "description": "这些设置同时适用于开机和关机。",
+        "data": {
+          "offline_as_off": "连接不上时显示为关机",
+          "power_timeout": "最长等待时间"
+        },
+        "data_description": {
+          "offline_as_off": "电视离线时仍保留开机按钮。断网也会被视为关机；授权失败或返回异常仍显示不可用。",
+          "power_timeout": "包含动作执行和等待电视响应的时间，默认 120 秒。超时会报错，不会重复发送电源指令。"
         }
       }
     },

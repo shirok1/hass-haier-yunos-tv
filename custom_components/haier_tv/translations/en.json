@@ -79,13 +79,53 @@
     "step": {
       "init": {
         "title": "Power control",
-        "description": "Use HA actions to call your IR service or script. Actions run once; wake succeeds only after native ADB readings and screen-on confirmation. Treating unreachable as off also includes network or power loss. Authorization and protocol errors remain unavailable.",
+        "description": "Choose what to change. Each page saves independently and keeps your other settings.",
+        "menu_options": {
+          "power_on": "Turn on · infrared or script",
+          "power_off": "Turn off · ADB or custom action",
+          "power_state": "State detection and timeout"
+        }
+      },
+      "power_on": {
+        "title": "Turn-on action",
+        "description": "Choose your existing IR service or script. The action runs once; power-on succeeds only when the TV reconnects and its screen is on. Clear the actions to remove the power-on control.",
         "data": {
-          "turn_on_action": "Turn-on action",
-          "offline_as_off": "Treat unreachable as off",
-          "turn_off_mode": "Turn-off method",
-          "turn_off_action": "Custom turn-off action",
-          "power_timeout": "Power confirmation timeout (seconds)"
+          "turn_on_action": "Action sequence"
+        },
+        "data_description": {
+          "turn_on_action": "Use Add action to choose a service or script. You can use the same power toggle for turn-on and turn-off."
+        }
+      },
+      "power_off": {
+        "title": "Turn-off method",
+        "description": "Choose how the media player turns off the TV. Custom action opens an action editor on the next page.",
+        "data": {
+          "turn_off_mode": "Method"
+        },
+        "data_description": {
+          "turn_off_mode": "Switching methods preserves your saved custom action."
+        }
+      },
+      "power_off_action": {
+        "title": "Custom turn-off action",
+        "description": "Choose your IR service or script. The action runs once; completion waits for the screen to turn off or the TV to disconnect.",
+        "data": {
+          "turn_off_action": "Action sequence"
+        },
+        "data_description": {
+          "turn_off_action": "At least one action is required. The same IR power toggle as turn-on is supported."
+        }
+      },
+      "power_state": {
+        "title": "State detection and timeout",
+        "description": "These settings apply to both power-on and power-off.",
+        "data": {
+          "offline_as_off": "Show disconnected TV as off",
+          "power_timeout": "Maximum wait for confirmation"
+        },
+        "data_description": {
+          "offline_as_off": "Keeps the power-on button available while the TV is offline. Network failures also look like power-off. Authorization or invalid-response errors still show unavailable.",
+          "power_timeout": "Includes action execution and waiting for the TV. Default 120 seconds; a timeout reports an error without resending the power command."
         }
       }
     },

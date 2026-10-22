@@ -43,24 +43,63 @@ async def setup(hass, entry):
 
 
 async def test_options(hass, entry, client):
-    entry.add_to_hass(hass)
+    await configure(hass, entry)
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    assert result["type"] is FlowResultType.FORM
+    assert result["type"] is FlowResultType.MENU
+    assert result["menu_options"] == ["power_on", "power_off", "power_state"]
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], OPTIONS | {"turn_off_action": []}
+        result["flow_id"], {"next_step_id": "power_off"}
     )
-    assert result["errors"] == {"turn_off_action": "action_required"}
+    assert result["step_id"] == "power_off"
+    assert "turn_off_action" not in result["data_schema"].schema
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], OPTIONS | {"turn_on_action": [{"invalid": True}]}
+        result["flow_id"], {"turn_off_mode": "action"}
     )
-    assert result["errors"] == {"base": "invalid_action"}
+    assert result["step_id"] == "power_off_action"
+    for action, error in [
+        ([], "action_required"),
+        ([{"invalid": True}], "invalid_action"),
+    ]:
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"turn_off_action": action}
+        )
+        assert result["errors"] == {"turn_off_action": error}
     with patch("custom_components.haier_tv.async_setup_entry", return_value=True):
         result = await hass.config_entries.options.async_configure(
-            result["flow_id"], OPTIONS
+            result["flow_id"], {"turn_off_action": OPTIONS["turn_off_action"]}
         )
         await hass.async_block_till_done()
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options == OPTIONS
+
+
+@pytest.mark.parametrize(
+    "step,changes",
+    [
+        ("power_on", {"turn_on_action": []}),
+        ("power_off", {"turn_off_mode": "adb"}),
+        ("power_off", {"turn_off_mode": "disabled"}),
+        ("power_state", {"offline_as_off": False, "power_timeout": 180}),
+    ],
+)
+async def test_independent_options_preserve_other_settings(
+    hass, entry, client, step, changes
+):
+    await configure(hass, entry)
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"], {"next_step_id": step}
+    )
+    assert result["step_id"] == step
+    # Reopening the editor retains the existing values.
+    assert result["data_schema"]({}) == {key: OPTIONS[key] for key in changes}
+    with patch("custom_components.haier_tv.async_setup_entry", return_value=True):
+        result = await hass.config_entries.options.async_configure(
+            flow["flow_id"], changes
+        )
+        await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options == OPTIONS | changes
 
 
 async def test_offline_start_and_wake(hass, entry, client):
@@ -225,7 +264,12 @@ async def test_options_reload_closes_old_connection(hass, entry, client):
     await setup(hass, entry)
     old = entry.runtime_data
     flow = await hass.config_entries.options.async_init(entry.entry_id)
-    result = await hass.config_entries.options.async_configure(flow["flow_id"], OPTIONS)
+    await hass.config_entries.options.async_configure(
+        flow["flow_id"], {"next_step_id": "power_on"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        flow["flow_id"], {"turn_on_action": OPTIONS["turn_on_action"]}
+    )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert old._stopped

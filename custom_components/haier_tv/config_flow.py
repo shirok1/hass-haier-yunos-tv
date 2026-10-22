@@ -122,53 +122,114 @@ class HaierConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class HaierOptionsFlow(OptionsFlowWithReload):
-    """Native HA action sequences for external power control."""
+    """Edit power actions and state handling independently without losing options."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        errors: dict[str, str] = {}
+        return self.async_show_menu(
+            step_id="init", menu_options=["power_on", "power_off", "power_state"]
+        )
+
+    async def async_step_power_on(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._async_action_step("power_on", "turn_on_action", user_input)
+
+    async def async_step_power_off(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         if user_input is not None:
-            try:
-                for key in ("turn_on_action", "turn_off_action"):
-                    await async_validate_actions_config(
-                        self.hass, cv.SCRIPT_SCHEMA(user_input.get(key, []))
-                    )
-                if user_input["turn_off_mode"] == "action" and not user_input.get(
-                    "turn_off_action"
-                ):
-                    errors["turn_off_action"] = "action_required"
-            except vol.Invalid:
-                errors["base"] = "invalid_action"
-            if not errors:
-                return self.async_create_entry(title="", data=user_input)
-        defaults = user_input if user_input is not None else self.config_entry.options
+            if user_input["turn_off_mode"] == "action":
+                return await self.async_step_power_off_action()
+            return self.async_create_entry(
+                title="", data=dict(self.config_entry.options) | user_input
+            )
         return self.async_show_form(
-            step_id="init",
-            errors=errors,
+            step_id="power_off",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(
-                        "turn_on_action", default=defaults.get("turn_on_action", [])
-                    ): selector.ActionSelector(),
-                    vol.Required(
-                        "offline_as_off", default=defaults.get("offline_as_off", False)
-                    ): selector.BooleanSelector(),
                     vol.Required(
                         "turn_off_mode",
-                        default=defaults.get("turn_off_mode", "disabled"),
+                        default=self.config_entry.options.get(
+                            "turn_off_mode", "disabled"
+                        ),
                     ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=["disabled", "adb", "action"],
                             translation_key="turn_off_mode",
+                            mode=selector.SelectSelectorMode.LIST,
                         )
                     ),
+                }
+            ),
+        )
+
+    async def async_step_power_off_action(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        return await self._async_action_step(
+            "power_off_action", "turn_off_action", user_input
+        )
+
+    async def _async_action_step(
+        self, step: str, key: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            sequence = user_input.get(key, [])
+            try:
+                await async_validate_actions_config(
+                    self.hass, cv.SCRIPT_SCHEMA(sequence)
+                )
+            except vol.Invalid:
+                errors[key] = "invalid_action"
+            if key == "turn_off_action" and not sequence:
+                errors[key] = "action_required"
+            if not errors:
+                data = dict(self.config_entry.options) | {key: sequence}
+                if key == "turn_off_action":
+                    data["turn_off_mode"] = "action"
+                return self.async_create_entry(title="", data=data)
+        defaults = user_input if user_input is not None else self.config_entry.options
+        return self.async_show_form(
+            step_id=step,
+            errors=errors,
+            data_schema=vol.Schema(
+                {
                     vol.Optional(
-                        "turn_off_action", default=defaults.get("turn_off_action", [])
+                        key, default=defaults.get(key, [])
                     ): selector.ActionSelector(),
+                }
+            ),
+        )
+
+    async def async_step_power_state(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(
+                title="", data=dict(self.config_entry.options) | user_input
+            )
+        defaults = self.config_entry.options
+        return self.async_show_form(
+            step_id="power_state",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        "offline_as_off", default=defaults.get("offline_as_off", False)
+                    ): selector.BooleanSelector(),
                     vol.Required(
                         "power_timeout", default=defaults.get("power_timeout", 120)
-                    ): vol.All(vol.Coerce(int), vol.Range(min=10, max=600)),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=10,
+                            max=600,
+                            step=1,
+                            unit_of_measurement="s",
+                            mode=selector.NumberSelectorMode.BOX,
+                        )
+                    ),
                 }
             ),
         )

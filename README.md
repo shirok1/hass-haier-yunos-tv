@@ -37,7 +37,7 @@ Use the integration's **Reconfigure** menu to change the host/port. The hardware
 
 ## Optional IR / native power control
 
-Open the integration's **Configure** options:
+Open the integration's **Configure** menu and choose **Turn on**, **Turn off**, or **State detection and timeout**. Each page saves independently while retaining the other settings. The custom turn-off action editor appears only when that method is selected; switching to ADB or disabling power-off preserves the saved action for later use.
 
 | Option | Behavior |
 |---|---|
