@@ -39,7 +39,7 @@ class HaierSensor(HaierEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        if not super().available:
+        if not super().available or self.coordinator.data is None:
             return False
         if self.entity_description.key == "resolution":
             return (
@@ -50,6 +50,8 @@ class HaierSensor(HaierEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
+        if self.coordinator.data is None:
+            return None
         if self.entity_description.key == "source":
             source = self.coordinator.data.source
             return SOURCE_NAMES.get(source, f"Unknown ({source})")

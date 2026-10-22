@@ -52,8 +52,16 @@ class HaierBinarySensor(HaierEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         match self.entity_description.key:
             case "connection":
-                return self.coordinator.last_update_success
+                return (
+                    self.coordinator.last_update_success
+                    and self.coordinator.data is not None
+                )
             case "signal":
-                return not self.coordinator.data.no_signal
+                return (
+                    self.coordinator.data is not None
+                    and not self.coordinator.data.no_signal
+                )
             case _:
-                return self.coordinator.data.screen
+                return (
+                    self.coordinator.data is not None and self.coordinator.data.screen
+                )

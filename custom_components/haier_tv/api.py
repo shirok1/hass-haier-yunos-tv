@@ -306,6 +306,10 @@ class HaierClient:
             raise WriteNotApplied(operation, expected, state)
         return state
 
+    async def async_sleep(self) -> None:
+        """Request native standby once; the caller confirms the resulting state."""
+        await self._transaction("sleep")
+
     async def _transaction(self, command: str | None = None) -> Snapshot:
         async with self._lock:
             if self._closed:
@@ -313,6 +317,22 @@ class HaierClient:
             try:
                 async with asyncio.timeout(30):
                     await self._connect()
+                    if command == "sleep":
+                        # Use the device's uptime-domain wake timestamp. /proc/uptime
+                        # includes suspend and can be in PowerManager's future.
+                        dump = await self._shell("dumpsys power")
+                        match = re.search(r"^\s*mLastWakeTime=(\d+)\s*$", dump, re.M)
+                        if not match or int(match[1]) >= 2**63:
+                            raise InvalidResponse("Missing power wake timestamp")
+                        low, high = struct.unpack(
+                            "<ii", struct.pack("<q", int(match[1]))
+                        )
+                        parcel_bytes(
+                            await self._shell(
+                                f"service call power 9 i32 {low} i32 {high} i32 0"
+                            )
+                        )
+                        command = None
                     shell = batch_command(READS)
                     if command is not None:
                         shell = f"{command}; {shell}"

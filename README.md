@@ -19,7 +19,7 @@ One device with these entities:
 
 HDMI1/2/3 use the verified source IDs 16/17/18. ATV, DTV, AV and component input use firmware-derived mappings; those physical inputs have not all been signal-tested. Android is a reported internal state, not a selectable hardware input.
 
-The integration does not expose unverified power/wake, sleep timer, or screen-blanking commands. It leaves the fixed picture profile and flattened EQ alone. MaxxBass is the TV's SRS-backed switch; off does not imply that every other SRS path is bypassed.
+Power controls are optional (see below). The integration does not expose sleep timer or screen-blanking commands. It leaves the fixed picture profile and flattened EQ alone. MaxxBass is the TV's SRS-backed switch; off does not imply that every other SRS path is bypassed.
 
 ## Install and migrate from the YAML prototype
 
@@ -35,13 +35,41 @@ A setup flow refuses to connect when it sees an enabled built-in Android Debug B
 
 Use the integration's **Reconfigure** menu to change the host/port. The hardware MAC identifies the device; reconfiguration cannot silently substitute a different television. ADB authorization failures start HA's reauthentication flow.
 
+## Optional IR / native power control
+
+Open the integration's **Configure** options:
+
+| Option | Behavior |
+|---|---|
+| Turn-on action | Native HA action editor: select your existing IR service or script |
+| Treat unreachable as off | Keep the media player available as `off` when ADB cannot connect; off by default |
+| Turn-off method | Disabled (default), ADB native standby, or custom action |
+| Custom turn-off action | Independent HA action sequence; may use the same IR toggle as turn-on |
+| Power confirmation timeout | 10–600 seconds; default 120, including action execution and confirmation |
+
+After saving, the entry reloads. The media player's standard power controls become available according to the configured actions. Initial integration registration still requires the TV online for model/identity validation. Once registered, **Treat unreachable as off** also allows HA to start with the TV off, without losing the wake control.
+
+Example action sequence (replace with your existing script, or use the visual editor):
+
+```yaml
+- action: script.tv_power_ir
+```
+
+The integration reads the current state first. If already in the desired state, it sends nothing. Otherwise it runs the selected action **once**, then polls until confirmed. Turn-on requires a valid full native snapshot **and screen on**; a TCP connection alone is insufficient. Turn-off requires screen off or ADB unreachable. It never automatically repeats a power toggle. Actions that time out or fail report an error to their caller. Concurrent power requests are rejected; `power_transition` reports `turning_on` / `turning_off` while waiting, without optimistic on/off state.
+
+Other controls remain unavailable while ADB is unreachable. The connection diagnostic still reports off. Authorization, identity and malformed native-reading errors remain errors, even with the offline option enabled. Network loss is indistinguishable from standby, so a failed network can also look like a successful shutdown. Disable this option if you prefer unavailable in that case.
+
+Disabling/reloading the integration cancels pending power confirmation and the integration-owned action sequence before closing ADB. An already transmitted IR command cannot be recalled; independently launched scripts (for example via `script.turn_on`) are not owned by the integration. Prefer calling the script directly if its completion should be awaited.
+
+ADB standby uses the firmware's `IPowerManager.goToSleep(long, int)` Binder transaction, not a key event. This path has protocol/unit tests but **has not been physically verified on the television**. A custom IR action is available for the power mechanism you already use. No power action executes merely by saving options or starting HA.
+
 ## Behavior and failure handling
 
 - `adb-shell[async]==0.4.4`, the same ADB library version used by HA Core's Android Debug Bridge integration.
 - A `DataUpdateCoordinator` polls every 10 seconds and supplies every entity. Reading entity properties never performs network I/O.
 - One client and one lock serialize reads, writes, readback and connection closure. A write is followed immediately by a full snapshot. UI state is not optimistic.
 - Failed writes are reported to HA callers and are **not replayed automatically**. If readback differs, the UI receives the actual state and the action reports an error.
-- When the native connection fails, controls become unavailable and the connection binary sensor becomes off. Polling reconnects and verifies model, SDK, Binder service and saved MAC before using transaction IDs.
+- By default, when the native connection fails, controls become unavailable and the connection binary sensor becomes off. Polling reconnects and verifies model, SDK, Binder service and saved MAC before using transaction IDs.
 - Core numeric readings are required; invalid or truncated data never becomes zero. Resolution failure affects only that sensor. A no-signal indication makes resolution unavailable.
 - Input switching opens `RootActivity` only if outside the recognized TV source activities, and skips the switch transaction when already at the requested source. No Home key is sent.
 - Disabling/unloading the entry or stopping HA shuts down polling, rejects queued commands, waits for the current bounded transaction, and closes the transport. Loading the integration only reads state; it does not apply preferences.

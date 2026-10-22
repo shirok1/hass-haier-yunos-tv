@@ -7,13 +7,23 @@ from pathlib import Path
 from adb_shell.auth.keygen import keygen
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.script import Script, async_validate_actions_config
 from homeassistant.helpers.storage import STORAGE_DIR
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import AuthenticationError, HaierClient, HaierError, Snapshot, WriteNotApplied
-from .const import DOMAIN, UPDATE_INTERVAL
+from .api import (
+    AuthenticationError,
+    CannotConnect,
+    DeviceInfo,
+    HaierClient,
+    HaierError,
+    Snapshot,
+    WriteNotApplied,
+)
+from .const import DOMAIN, MODEL, UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +50,7 @@ async def async_create_client(
     return HaierClient(host, port, signer, expected_id)
 
 
-class HaierCoordinator(DataUpdateCoordinator[Snapshot]):
+class HaierCoordinator(DataUpdateCoordinator[Snapshot | None]):
     """Read a full native snapshot once for every entity."""
 
     def __init__(
@@ -55,10 +65,96 @@ class HaierCoordinator(DataUpdateCoordinator[Snapshot]):
             always_update=False,
         )
         self.client = client
+        self.entry = entry
+        self.offline_as_off = bool(entry.options.get("offline_as_off", False))
+        self.off_mode = entry.options.get("turn_off_mode", "disabled")
+        self.power_timeout = entry.options.get("power_timeout", 120)
+        self.scripts: dict[str, Script] = {}
+        self.power_transition: str | None = None
+        self._power_task: asyncio.Task | None = None
+        self._stopped = False
 
-    async def _async_update_data(self) -> Snapshot:
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Known entries can start while their already-validated TV is off."""
+        return self.client.info or DeviceInfo(
+            self.entry.unique_id or "", MODEL, self.entry.data.get("fingerprint", "")
+        )
+
+    async def async_setup_power(self) -> None:
+        for key in ("turn_on_action", "turn_off_action"):
+            if sequence := self.entry.options.get(key):
+                sequence = await async_validate_actions_config(
+                    self.hass, cv.SCRIPT_SCHEMA(sequence)
+                )
+                self.scripts[key] = Script(self.hass, sequence, key, DOMAIN)
+
+    async def async_shutdown(self) -> None:
+        self._stopped = True
+        if (task := self._power_task) is not None:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        for script in self.scripts.values():
+            await script.async_unload()
+        await super().async_shutdown()
+
+    async def _async_read_power(self) -> Snapshot | None:
         try:
             return await self.client.async_read()
+        except CannotConnect:
+            return None
+
+    async def async_power(self, on: bool, context: Context | None) -> None:
+        """Send a toggle at most once, then confirm actual state under a deadline."""
+        if self._stopped or self._power_task is not None:
+            raise HomeAssistantError("Power control is stopped or already in progress")
+        key = "turn_on_action" if on else "turn_off_action"
+        if (on or self.off_mode == "action") and key not in self.scripts:
+            raise HomeAssistantError("Configure the power action first")
+        if not on and self.off_mode == "disabled":
+            raise HomeAssistantError("Power off is disabled")
+        self._power_task = asyncio.current_task()
+        self.power_transition = "turning_on" if on else "turning_off"
+        self.async_update_listeners()
+        try:
+            async with asyncio.timeout(self.power_timeout):
+                state = await self._async_read_power()
+                self.async_set_updated_data(state)
+                if bool(state and state.screen) == on:
+                    return
+                if not on and self.off_mode == "adb":
+                    try:
+                        await self.client.async_sleep()
+                    except CannotConnect:
+                        # Standby can close ADB before its reply. Confirm below.
+                        pass
+                else:
+                    await self.scripts[key].async_run({}, context=context)
+                while True:
+                    state = await self._async_read_power()
+                    self.async_set_updated_data(state)
+                    if bool(state and state.screen) == on:
+                        return
+                    await asyncio.sleep(2)
+        except TimeoutError as exc:
+            raise HomeAssistantError(
+                "Timed out waiting for TV power confirmation"
+            ) from exc
+        except HaierError as exc:
+            self.async_set_update_error(UpdateFailed(str(exc)))
+            raise HomeAssistantError(str(exc)) from exc
+        finally:
+            self._power_task = None
+            self.power_transition = None
+            self.async_update_listeners()
+
+    async def _async_update_data(self) -> Snapshot | None:
+        try:
+            return await self.client.async_read()
+        except CannotConnect as exc:
+            if self.offline_as_off:
+                return None
+            raise UpdateFailed(str(exc)) from exc
         except AuthenticationError as exc:
             raise ConfigEntryAuthFailed("Authorize Home Assistant on the TV") from exc
         except HaierError as exc:

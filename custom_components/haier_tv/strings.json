@@ -74,5 +74,33 @@
         "name": "Refresh"
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Power control",
+        "description": "Use HA actions to call your IR service or script. Actions run once; wake succeeds only after native ADB readings and screen-on confirmation. Treating unreachable as off also includes network or power loss. Authorization and protocol errors remain unavailable.",
+        "data": {
+          "turn_on_action": "Turn-on action",
+          "offline_as_off": "Treat unreachable as off",
+          "turn_off_mode": "Turn-off method",
+          "turn_off_action": "Custom turn-off action",
+          "power_timeout": "Power confirmation timeout (seconds)"
+        }
+      }
+    },
+    "error": {
+      "action_required": "Choose a turn-off action.",
+      "invalid_action": "Invalid action sequence. Check the action configuration."
+    }
+  },
+  "selector": {
+    "turn_off_mode": {
+      "options": {
+        "disabled": "Disable power-off control",
+        "adb": "ADB native standby",
+        "action": "Custom action"
+      }
+    }
   }
 }

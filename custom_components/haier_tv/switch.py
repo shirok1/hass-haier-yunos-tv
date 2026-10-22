@@ -34,8 +34,8 @@ class HaierSwitch(HaierEntity, SwitchEntity):
         self.entity_description = description
 
     @property
-    def is_on(self) -> bool:
-        return getattr(self.coordinator.data, self.entity_description.key)
+    def is_on(self) -> bool | None:
+        return getattr(self.coordinator.data, self.entity_description.key, None)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.async_control(self.entity_description.key, 1)

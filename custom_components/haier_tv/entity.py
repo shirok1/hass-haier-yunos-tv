@@ -14,7 +14,7 @@ class HaierEntity(CoordinatorEntity[HaierCoordinator]):
 
     def __init__(self, coordinator: HaierCoordinator, key: str) -> None:
         super().__init__(coordinator)
-        info = coordinator.client.info
+        info = coordinator.device_info
         assert info is not None
         self._attr_unique_id = f"{info.unique_id}_{key}"
         self._attr_device_info = DeviceInfo(
@@ -24,3 +24,7 @@ class HaierEntity(CoordinatorEntity[HaierCoordinator]):
             model=info.model,
             sw_version=info.fingerprint or None,
         )
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data is not None

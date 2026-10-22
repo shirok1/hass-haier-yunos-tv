@@ -74,5 +74,33 @@
         "name": "刷新状态"
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "电源控制",
+        "description": "使用 HA 动作编辑器调用现有红外服务或脚本。动作只执行一次；开机需等到 ADB 原生状态可读且屏幕开启才算成功。连接失败视为关机会同时涵盖断网、断电和待机；授权或协议错误仍显示不可用。",
+        "data": {
+          "turn_on_action": "开机动作",
+          "offline_as_off": "连接失败视为关机",
+          "turn_off_mode": "关机方式",
+          "turn_off_action": "自定义关机动作",
+          "power_timeout": "电源状态确认超时（秒）"
+        }
+      }
+    },
+    "error": {
+      "action_required": "请选择关机动作。",
+      "invalid_action": "动作配置无效，请检查动作内容。"
+    }
+  },
+  "selector": {
+    "turn_off_mode": {
+      "options": {
+        "disabled": "禁用关机控制",
+        "adb": "ADB 原生待机",
+        "action": "自定义动作"
+      }
+    }
   }
 }

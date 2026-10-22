@@ -29,3 +29,20 @@ Derived from the user's prior on-device and firmware investigation in the `2026-
 - `outputs/tv-control/extra-readings.txt` — source of `tests/fixtures/resolution.txt`.
 
 Firmware binaries, private device state, keys and debloat tools are intentionally not required by this repository.
+
+
+## Native standby (optional, not hardware-tested)
+
+The extracted firmware interface identifies transaction 9 as
+`IPowerManager.goToSleep(long eventTime, int reason)`. The client reads
+`mLastWakeTime` from `dumpsys power`, splits that nonnegative int64 timestamp
+into signed low/high int32 words for the old `service` CLI, and sends reason 0.
+It validates the Binder exception header and separately confirms screen-off
+or loss of ADB. An absent timestamp is an error; there is no key-event fallback.
+
+Using the last wake timestamp avoids substituting host wall-clock time or Linux
+`/proc/uptime` (which includes suspend) for Android's uptime clock. Android 4.4
+accepts an event time equal to the last wake time and rejects future times:
+[AOSP PowerManagerService](https://github.com/aosp-mirror/platform_frameworks_base/blob/android-4.4.4_r2/services/java/com/android/server/power/PowerManagerService.java).
+If the TV wakes again between the dump and the call, the old event can be ignored;
+the confirmation timeout surfaces that instead of replaying the command.

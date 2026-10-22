@@ -380,3 +380,38 @@ async def test_ha_disable_closes_real_client(hass, entry, transport):
         assert transport.connect.await_count == connects
         with pytest.raises(CannotConnect, match="closed"):
             await client.async_read()
+
+
+@pytest.mark.parametrize(
+    "timestamp,low,high", [(123, 123, 0), (4294967295, -1, 0), (4294967296, 0, 1)]
+)
+async def test_native_standby_timestamp(timestamp, low, high):
+    with patch("custom_components.haier_tv.api.AdbDeviceTcpAsync") as constructor:
+        device = constructor.return_value
+        device.available = True
+        device.shell = AsyncMock(
+            side_effect=[
+                f"  mLastWakeTime={timestamp}\n",
+                "Result: Parcel(00000000)",
+                snapshot(screen=0),
+            ]
+        )
+        client = HaierClient("192.0.2.1", 5555, Mock())
+        await client.async_sleep()
+        assert device.shell.await_args_list[0].args[0] == "dumpsys power"
+        assert (
+            device.shell.await_args_list[1].args[0]
+            == f"service call power 9 i32 {low} i32 {high} i32 0"
+        )
+
+
+async def test_native_standby_rejects_unknown_clock():
+    with patch("custom_components.haier_tv.api.AdbDeviceTcpAsync") as constructor:
+        device = constructor.return_value
+        device.available = True
+        device.shell = AsyncMock(return_value="Unknown dump")
+        device.close = AsyncMock()
+        client = HaierClient("192.0.2.1", 5555, Mock())
+        with pytest.raises(InvalidResponse):
+            await client.async_sleep()
+        assert device.shell.await_count == 1

@@ -3,9 +3,17 @@
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import selector
+from homeassistant.helpers.script import async_validate_actions_config
 
 from .api import AuthenticationError, CannotConnect, InvalidResponse, UnsupportedDevice
 from .const import DEFAULT_PORT, DOMAIN
@@ -16,6 +24,11 @@ class HaierConfigFlow(ConfigFlow, domain=DOMAIN):
     """Only expose native controls after validating the model and native reads."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> HaierOptionsFlow:
+        return HaierOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -106,3 +119,56 @@ class HaierConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         )
         return self.async_show_form(step_id=step, data_schema=schema, errors=errors)
+
+
+class HaierOptionsFlow(OptionsFlowWithReload):
+    """Native HA action sequences for external power control."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                for key in ("turn_on_action", "turn_off_action"):
+                    await async_validate_actions_config(
+                        self.hass, cv.SCRIPT_SCHEMA(user_input.get(key, []))
+                    )
+                if user_input["turn_off_mode"] == "action" and not user_input.get(
+                    "turn_off_action"
+                ):
+                    errors["turn_off_action"] = "action_required"
+            except vol.Invalid:
+                errors["base"] = "invalid_action"
+            if not errors:
+                return self.async_create_entry(title="", data=user_input)
+        defaults = user_input if user_input is not None else self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            errors=errors,
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        "turn_on_action", default=defaults.get("turn_on_action", [])
+                    ): selector.ActionSelector(),
+                    vol.Required(
+                        "offline_as_off", default=defaults.get("offline_as_off", False)
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        "turn_off_mode",
+                        default=defaults.get("turn_off_mode", "disabled"),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["disabled", "adb", "action"],
+                            translation_key="turn_off_mode",
+                        )
+                    ),
+                    vol.Optional(
+                        "turn_off_action", default=defaults.get("turn_off_action", [])
+                    ): selector.ActionSelector(),
+                    vol.Required(
+                        "power_timeout", default=defaults.get("power_timeout", 120)
+                    ): vol.All(vol.Coerce(int), vol.Range(min=10, max=600)),
+                }
+            ),
+        )

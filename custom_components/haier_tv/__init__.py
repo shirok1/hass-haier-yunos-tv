@@ -30,10 +30,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: HaierConfigEntry) -> boo
     )
     coordinator = HaierCoordinator(hass, entry, client)
     try:
+        await coordinator.async_setup_power()
         await coordinator.async_config_entry_first_refresh()
         entry.runtime_data = coordinator
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     except BaseException:
+        await coordinator.async_shutdown()
         await client.async_close()
         raise
 

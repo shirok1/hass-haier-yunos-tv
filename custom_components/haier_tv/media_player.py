@@ -1,5 +1,7 @@
 """Native source and TV amplifier controls, not Android music-stream volume."""
 
+from typing import Any
+
 from homeassistant.components.media_player import (
     MediaPlayerDeviceClass,
     MediaPlayerEntity,
@@ -39,26 +41,52 @@ class HaierMediaPlayer(HaierEntity, MediaPlayerEntity):
 
     def __init__(self, coordinator: HaierCoordinator) -> None:
         super().__init__(coordinator, "tv")
+        if "turn_on_action" in coordinator.scripts:
+            self._attr_supported_features |= MediaPlayerEntityFeature.TURN_ON
+        if coordinator.off_mode != "disabled":
+            self._attr_supported_features |= MediaPlayerEntityFeature.TURN_OFF
+
+    @property
+    def available(self) -> bool:
+        return self.coordinator.last_update_success and (
+            self.coordinator.data is not None or self.coordinator.offline_as_off
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"power_transition": self.coordinator.power_transition}
+
+    async def async_turn_on(self) -> None:
+        await self.coordinator.async_power(True, self._context)
+
+    async def async_turn_off(self) -> None:
+        await self.coordinator.async_power(False, self._context)
 
     @property
     def state(self) -> MediaPlayerState:
         return (
             MediaPlayerState.ON
-            if self.coordinator.data.screen
+            if self.coordinator.data is not None and self.coordinator.data.screen
             else MediaPlayerState.OFF
         )
 
     @property
-    def source(self) -> str:
+    def source(self) -> str | None:
+        if self.coordinator.data is None:
+            return None
         value = self.coordinator.data.source
         return SOURCE_NAMES.get(value, f"Unknown ({value})")
 
     @property
-    def volume_level(self) -> float:
+    def volume_level(self) -> float | None:
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.volume / 100
 
     @property
-    def is_volume_muted(self) -> bool:
+    def is_volume_muted(self) -> bool | None:
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.mute
 
     async def async_select_source(self, source: str) -> None:

@@ -32,7 +32,9 @@ class HaierBacklight(HaierEntity, NumberEntity):
         super().__init__(coordinator, "backlight")
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> float | None:
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.backlight
 
     async def async_set_native_value(self, value: float) -> None:
